@@ -1,0 +1,14 @@
+{
+  "projects": {
+    "default": "chat-app-test-eaac2"
+  },
+  "targets": {
+    "chat-app-test-eaac2": {
+      "hosting": {
+        "mlcollectorjollymax": [
+          "mlcollectorjollymax"
+        ]
+      }
+    }
+  }
+} 
