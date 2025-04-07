@@ -1,5 +1,6 @@
 import { db } from './firebase';
 import { UserProfile } from '../../types/mlbb';
+import { updateRateLimitTimestamp } from './firebaseUtils';
 import {
   collection,
   addDoc,
@@ -63,6 +64,12 @@ const convertToUserProfile = (doc: QueryDocumentSnapshot<DocumentData>): UserPro
 // Add or update user profile
 export const saveUserProfile = async (profile: UserProfile): Promise<string> => {
   try {
+    // First update the rate limit timestamp
+    const rateLimitUpdated = await updateRateLimitTimestamp('profiles');
+    if (!rateLimitUpdated) {
+      console.warn('Rate limit tracking failed, but continuing with save operation');
+    }
+    
     // Ensure collection exists
     await ensureCollection();
     
@@ -75,6 +82,8 @@ export const saveUserProfile = async (profile: UserProfile): Promise<string> => 
         await updateDoc(doc(db, COLLECTION_NAME, existingUser.id!), {
           name: profile.name,
           region: profile.region,
+          playerId: profile.playerId,
+          seasonJoined: profile.seasonJoined,
           collectionPoints: profile.collectionPoints,
           totalPoints: profile.totalPoints,
           accountWorth: profile.accountWorth,

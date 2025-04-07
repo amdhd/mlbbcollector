@@ -11,6 +11,10 @@ import {
   doc,
   updateDoc,
   deleteDoc,
+  setDoc,
+  getDoc,
+  serverTimestamp,
+  runTransaction,
 } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
@@ -51,4 +55,38 @@ export const uploadFile = async (file: File, path: string) => {
   const storageRef = ref(storage, path);
   await uploadBytes(storageRef, file);
   return getDownloadURL(storageRef);
+};
+
+// Update rate limit timestamp for a user and specific action type
+export const updateRateLimitTimestamp = async (actionType: string): Promise<boolean> => {
+  try {
+    const user = auth.currentUser;
+    if (!user) {
+      console.error('No authenticated user found');
+      return false;
+    }
+
+    const userId = user.uid;
+    const rateLimitRef = doc(db, 'rateLimits', userId);
+    
+    // Check if the rate limit document exists
+    const rateLimitDoc = await getDoc(rateLimitRef);
+    
+    if (!rateLimitDoc.exists()) {
+      // Create a new rate limit document if it doesn't exist
+      await setDoc(rateLimitRef, {
+        [actionType]: serverTimestamp(),
+      });
+    } else {
+      // Update the existing document with the new timestamp
+      await updateDoc(rateLimitRef, {
+        [actionType]: serverTimestamp(),
+      });
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('Error updating rate limit timestamp:', error);
+    return false;
+  }
 };

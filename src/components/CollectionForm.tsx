@@ -42,13 +42,18 @@ const TierItem: React.FC<TierItemProps> = ({ tier, color, points, diamondCost, v
   
   return (
     <div className="mb-3 p-4 rounded-lg bg-gray-800">
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center">
-          <div className="w-3 h-3 rounded-full mr-3" style={{ backgroundColor: color }}></div>
-          <div className="text-white font-medium">{capitalizedName} Items</div>
+      <div className="flex items-center justify-between">
+        <div className="flex flex-col">
+          <div className="flex items-center mb-2">
+            <div className="w-3 h-3 rounded-full mr-3" style={{ backgroundColor: color }}></div>
+            <div className="text-white font-medium">{capitalizedName} Items</div>
+          </div>
+          <div className="text-white text-sm opacity-80">
+            {formatNumber(points)}pts {formatNumber(diamondCost)}💎
+          </div>
         </div>
         <div className="flex items-center space-x-3">
-          <div className="w-28">
+          <div className="w-24">
             <input
               type="number"
               min="0"
