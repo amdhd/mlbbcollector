@@ -7,6 +7,7 @@ import TabNavigation, { TabId } from '../components/TabNavigation';
 import ProfileForm from '../components/ProfileForm';
 import CollectionForm from '../components/CollectionForm';
 import Rankings from '../components/Rankings';
+import Help from '../components/Help';
 import LoadingSpinner from '../components/LoadingSpinner';
 import Notification, { NotificationType } from '../components/Notification';
 import { 
@@ -268,6 +269,10 @@ export default function Home() {
                 />
               )}
             </>
+          )}
+          
+          {activeTab === 'help' && (
+            <Help />
           )}
         </div>
       </div>
