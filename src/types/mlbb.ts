@@ -14,6 +14,7 @@ export interface UserProfile {
   region: string;
   playerId: string;
   seasonJoined?: string;
+  profileImageUrl?: string;
   collectionPoints: CollectorItem;
   totalPoints: number;
   accountWorth: number;

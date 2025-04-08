@@ -38,6 +38,19 @@ const defaultProfile: UserProfile = {
   updatedAt: Date.now()
 };
 
+// Get client IP address - this is a simple approach that works in many cases
+// For a more accurate approach, you'd use a server-side API
+const getClientIP = async (): Promise<string> => {
+  try {
+    const response = await fetch('https://api.ipify.org?format=json');
+    const data = await response.json();
+    return data.ip;
+  } catch (error) {
+    console.error('Failed to get client IP:', error);
+    return 'unknown';
+  }
+};
+
 export default function Home() {
   const [activeTab, setActiveTab] = useState<TabId>('profile');
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
@@ -100,7 +113,7 @@ export default function Home() {
   const fetchTopUsers = useCallback(async () => {
     setLoading(true);
     try {
-      const users = await getTopUsers(10);
+      const users = await getTopUsers(30);
       setTopUsers(users);
     } catch (error) {
       console.error('Error fetching top users:', error);
@@ -142,7 +155,10 @@ export default function Home() {
   // Handle saving the user profile
   const handleSaveProfile = async (profile: UserProfile) => {
     try {
-      const userId = await saveUserProfile(profile);
+      // Get client IP for rate limiting
+      const clientIP = await getClientIP();
+      
+      const userId = await saveUserProfile(profile, clientIP);
       
       const allUsers = await getAllUsers();
       
@@ -163,9 +179,15 @@ export default function Home() {
       
       // Update top users list
       fetchTopUsers();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving profile:', error);
-      showNotification('Failed to save profile', 'error');
+      
+      // Check if this is a rate limit error
+      if (error.message && error.message.includes('Profile submission limit reached')) {
+        showNotification(error.message, 'error');
+      } else {
+        showNotification('Failed to save profile. Please try again later.', 'error');
+      }
     }
   };
   

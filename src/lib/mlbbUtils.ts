@@ -59,8 +59,8 @@ export const calculateDiamondValue = (items: CollectorItem): number => {
 
 // Calculate RM value based on diamond value (approximate conversion)
 export const calculateRMValue = (diamondValue: number): number => {
-  // Roughly RM92k for 1.2M diamonds as per reference data
-  const conversionRate = 92000 / 1200000;
+  // New conversion: RM50k for 630,200 collector points (as per data)
+  const conversionRate = 50000 / 1200000;
   return Math.round(diamondValue * conversionRate);
 };
 
@@ -111,22 +111,27 @@ export const formatNumber = (num: number): string => {
   return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 };
 
-// Calculate user's percentile rank among all users
+// Function to calculate user's percentile based on their rank and total number of users
 export const calculatePercentile = (userPoints: number, allUsers: UserProfile[]): number => {
   if (!allUsers.length) return 0;
   
-  const sortedPoints = [...allUsers]
-    .sort((a, b) => b.totalPoints - a.totalPoints)
-    .map(user => user.totalPoints);
+  // Sort users by points in descending order
+  const sortedUsers = [...allUsers].sort((a, b) => b.totalPoints - a.totalPoints);
   
-  const userRank = sortedPoints.findIndex(points => points <= userPoints) + 1;
-  return Math.round((1 - userRank / allUsers.length) * 100);
+  // Find user's rank (position in the sorted array + 1)
+  const userRank = sortedUsers.findIndex(user => user.totalPoints <= userPoints) + 1;
+  
+  // Calculate top X% - lower percentages are better (top 10% is better than top 50%)
+  // For example: Rank 3 out of 10 users means user is in top 30%
+  return Math.round((userRank * 100) / allUsers.length);
 };
 
 // Get the user's rank
 export const getUserRank = (userPoints: number, allUsers: UserProfile[]): number => {
   if (!allUsers.length) return 0;
   
+  // Sort users by points in descending order and find the user's position
+  // This gives us the rank (1st, 2nd, 3rd, etc.)
   return [...allUsers]
     .sort((a, b) => b.totalPoints - a.totalPoints)
     .findIndex(user => user.totalPoints <= userPoints) + 1;

@@ -40,6 +40,17 @@ const TierItem: React.FC<TierItemProps> = ({ tier, color, points, diamondCost, v
   const capitalizedName = tier.charAt(0).toUpperCase() + tier.slice(1);
   const totalSkins = TOTAL_SKINS[tier];
   
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const inputValue = parseInt(e.target.value) || 0;
+    // Limit to maximum available skins for this tier
+    const validValue = Math.min(inputValue, totalSkins);
+    onChange(tier, validValue);
+  };
+  
+  // Calculate percentage of collection completion for this tier
+  const completionPercentage = Math.round((value / totalSkins) * 100);
+  const progressBarWidth = `${completionPercentage}%`;
+  
   return (
     <div className="mb-3 p-4 rounded-lg bg-gray-800">
       <div className="flex items-center justify-between">
@@ -49,7 +60,16 @@ const TierItem: React.FC<TierItemProps> = ({ tier, color, points, diamondCost, v
             <div className="text-white font-medium">{capitalizedName} Items</div>
           </div>
           <div className="text-white text-sm opacity-80">
-            {formatNumber(points)}pts {formatNumber(diamondCost)}💎
+            {formatNumber(points)}pts 
+            <span className="block text-xs opacity-70">
+              {tier === 'supreme' && 'Legend Skins'}
+              {tier === 'grand' && 'JJK, AOT Collab'}
+              {tier === 'exquisite' && 'Collector Skin'}
+              {tier === 'deluxe' && 'Epic Skins'}
+              {tier === 'exceptional' && 'Elite, Special'}
+              {tier === 'common' && 'Other'}
+              {tier === 'painted' && 'Painted'}
+            </span>
           </div>
         </div>
         <div className="flex items-center space-x-3">
@@ -57,9 +77,10 @@ const TierItem: React.FC<TierItemProps> = ({ tier, color, points, diamondCost, v
             <input
               type="number"
               min="0"
+              max={totalSkins}
               className="w-full bg-gray-900 text-white p-2 rounded text-right text-lg font-bold"
               value={value}
-              onChange={(e) => onChange(tier, parseInt(e.target.value) || 0)}
+              onChange={handleInputChange}
             />
           </div>
           <div className="text-right text-white text-sm min-w-[60px]">
@@ -67,8 +88,15 @@ const TierItem: React.FC<TierItemProps> = ({ tier, color, points, diamondCost, v
           </div>
         </div>
       </div>
-      <div className="text-white text-sm opacity-80">
-        {formatNumber(points)}pts {formatNumber(diamondCost)}💎
+      {/* Progress bar showing collection completion */}
+      <div className="mt-2 w-full bg-gray-700 rounded-full h-1.5 overflow-hidden">
+        <div 
+          className="h-full rounded-full" 
+          style={{ 
+            width: progressBarWidth, 
+            backgroundColor: color 
+          }}
+        ></div>
       </div>
     </div>
   );
@@ -88,9 +116,12 @@ const CollectionForm: React.FC<CollectionFormProps> = ({ onSave, initialProfile 
   );
   
   const handleTierChange = (tier: CollectorTier, value: number) => {
+    // Ensure value doesn't exceed max for tier
+    const validValue = Math.min(value, TOTAL_SKINS[tier]);
+    
     setCollectionPoints(prev => ({
       ...prev,
-      [tier]: value
+      [tier]: validValue
     }));
   };
   
@@ -198,6 +229,10 @@ const CollectionForm: React.FC<CollectionFormProps> = ({ onSave, initialProfile 
         >
           Save Collection
         </button>
+        
+        <p className="text-center text-gray-400 text-xs mt-4 italic">
+          Note: All diamond and RM values are estimates and not exact figures. Actual values may vary.
+        </p>
       </form>
     </div>
   );

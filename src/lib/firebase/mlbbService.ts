@@ -1,6 +1,6 @@
 import { db } from './firebase';
 import { UserProfile } from '../../types/mlbb';
-import { updateRateLimitTimestamp } from './firebaseUtils';
+import { updateRateLimitTimestamp, checkIPProfileRateLimit } from './firebaseUtils';
 import {
   collection,
   addDoc,
@@ -41,6 +41,8 @@ const convertToUserProfile = (doc: QueryDocumentSnapshot<DocumentData>): UserPro
     name: data.name || '',
     region: data.region || '',
     playerId: data.playerId || '',
+    seasonJoined: data.seasonJoined || '',
+    profileImageUrl: data.profileImageUrl || '',
     collectionPoints: data.collectionPoints || {
       supreme: 0,
       grand: 0,
@@ -61,9 +63,17 @@ const convertToUserProfile = (doc: QueryDocumentSnapshot<DocumentData>): UserPro
   };
 };
 
-// Add or update user profile
-export const saveUserProfile = async (profile: UserProfile): Promise<string> => {
+// Add or update user profile with IP rate limiting
+export const saveUserProfile = async (profile: UserProfile, clientIP?: string): Promise<string> => {
   try {
+    // Check IP rate limits if the clientIP is provided and this appears to be a new profile
+    if (clientIP && !profile.id) {
+      const ipCheck = await checkIPProfileRateLimit(clientIP);
+      if (!ipCheck.allowed) {
+        throw new Error(`Profile submission limit reached. Please try again in ${ipCheck.timeRemaining} hours.`);
+      }
+    }
+    
     // First update the rate limit timestamp
     const rateLimitUpdated = await updateRateLimitTimestamp('profiles');
     if (!rateLimitUpdated) {
@@ -84,6 +94,7 @@ export const saveUserProfile = async (profile: UserProfile): Promise<string> => 
           region: profile.region,
           playerId: profile.playerId,
           seasonJoined: profile.seasonJoined,
+          profileImageUrl: profile.profileImageUrl,
           collectionPoints: profile.collectionPoints,
           totalPoints: profile.totalPoints,
           accountWorth: profile.accountWorth,
@@ -107,7 +118,7 @@ export const saveUserProfile = async (profile: UserProfile): Promise<string> => 
     return docRef.id;
   } catch (error) {
     console.error('Error saving user profile:', error);
-    throw new Error('Failed to save user profile');
+    throw error; // Rethrow so we can handle specific errors in the UI
   }
 };
 
@@ -167,7 +178,7 @@ export const getUserById = async (id: string): Promise<UserProfile | null> => {
 };
 
 // Get top users by total points
-export const getTopUsers = async (count: number = 10): Promise<UserProfile[]> => {
+export const getTopUsers = async (count: number = 30): Promise<UserProfile[]> => {
   try {
     // Ensure collection exists
     await ensureCollection();
@@ -190,7 +201,7 @@ export const getTopUsers = async (count: number = 10): Promise<UserProfile[]> =>
 };
 
 // Get top users by region
-export const getTopUsersByRegion = async (region: string, count: number = 10): Promise<UserProfile[]> => {
+export const getTopUsersByRegion = async (region: string, count: number = 30): Promise<UserProfile[]> => {
   try {
     if (!region) return [];
     

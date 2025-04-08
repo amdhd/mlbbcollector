@@ -17,7 +17,7 @@ const nextConfig = {
   // Disable API routes for static export
   distDir: 'out',
   
-  trailingSlash: true
+  trailingSlash: false
 }
 
 module.exports = nextConfig 

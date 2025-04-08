@@ -10,19 +10,29 @@ const Header: React.FC<HeaderProps> = ({ currentUser }) => {
   // State to track if the AVIF image fails to load
   const [imageError, setImageError] = useState(false);
   
+  // Generate default avatar URL for users without a profile image
+  const defaultAvatarUrl = currentUser?.name 
+    ? `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser.name)}&background=random&color=fff`
+    : imageError ? "/images/mlbb-hero.jpg" : "/images/mlbb-hero.avif";
+  
   return (
     <header className="bg-indigo-900 text-white py-3 px-4">
       <div className="max-w-full">
         <h1 className="text-xl sm:text-2xl font-bold text-orange-400 text-center mb-3">
-          MLBB Ranking by JollyMax
+          MLBB Collector Ranking 
         </h1>
         
         <div className="flex items-center justify-between">
           <div className="flex items-center">
             <div className="relative w-12 h-12 mr-3 rounded-full overflow-hidden border-2 border-blue-400 bg-blue-800">
               <img 
-                src={imageError ? "/images/mlbb-hero.jpg" : "/images/mlbb-hero.avif"} 
-                onError={() => setImageError(true)}
+                src={currentUser?.profileImageUrl || defaultAvatarUrl} 
+                onError={(e) => {
+                  setImageError(true);
+                  const target = e.target as HTMLImageElement;
+                  target.onerror = null; // Prevent infinite loop
+                  target.src = imageError ? "/images/mlbb-hero.jpg" : defaultAvatarUrl;
+                }}
                 alt="Profile avatar"
                 className="object-cover w-full h-full"
               />
@@ -48,9 +58,9 @@ const Header: React.FC<HeaderProps> = ({ currentUser }) => {
           <div className="bg-indigo-800 rounded-lg p-2 text-center">
             <div className="flex items-center justify-between">
               <div className="mr-5">
-                <div className="text-xs text-gray-300 font-bold">RM Value</div>
+                <div className="text-xs text-gray-300 font-bold">Total Spent</div>
                 <div className="text-lg font-bold text-green-400">
-                  {currentUser?.rmValue ? formatNumber(currentUser.rmValue) : '0'}
+                  RM {currentUser?.rmValue ? formatNumber(currentUser.rmValue) : '0'}
                 </div>
               </div>
               <div>
