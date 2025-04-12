@@ -1,0 +1,17 @@
+{
+  "name": "MLBB Collector Ranking",
+  "short_name": "MLBB Ranking",
+  "description": "Track your MLBB collection items, calculate your worth, and see rankings of top collectors",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#2A0066",
+  "theme_color": "#2A0066",
+  "icons": [
+    {
+      "src": "/app-icon.webp",
+      "sizes": "512x512",
+      "type": "image/webp",
+      "purpose": "any maskable"
+    }
+  ]
+} 

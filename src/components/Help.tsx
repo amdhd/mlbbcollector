@@ -8,7 +8,7 @@ const Help: React.FC = () => {
       title: "Create Your Profile",
       description: [
         "Click on the 'Profile' tab if not already there",
-        "Upload your MLBB profile picture by clicking on the image upload area",
+        "Upload your MLBB Collector Showcase by clicking on the image upload area",
         "Enter your MLBB/TikTok Username (required)",
         "Enter your Player ID for verification",
         "Select your State/Region (required)",

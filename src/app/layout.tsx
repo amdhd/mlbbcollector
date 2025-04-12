@@ -5,6 +5,22 @@ import Script from 'next/script';
 export const metadata: Metadata = {
   title: 'MLBB Ranking',
   description: 'Track your MLBB collection items, calculate your worth, and see rankings of top collectors',
+  icons: {
+    icon: [
+      {
+        url: '/app-icon.webp',
+        type: 'image/webp',
+      }
+    ],
+    apple: [
+      {
+        url: '/app-icon.webp',
+        type: 'image/webp',
+        sizes: '180x180',
+      }
+    ],
+  },
+  manifest: '/manifest.json',
 }
 
 export const viewport: Viewport = {
@@ -12,6 +28,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
+  themeColor: '#2A0066',
 }
 
 export default function RootLayout({
@@ -22,6 +39,8 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
+        <link rel="icon" href="/app-icon.webp" type="image/webp" />
+        <link rel="manifest" href="/manifest.json" />
         <Script
           src="https://www.googletagmanager.com/gtag/js?id=G-JRVM4M1RZX"
           strategy="afterInteractive"

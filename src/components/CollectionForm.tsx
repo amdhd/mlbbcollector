@@ -114,6 +114,7 @@ const CollectionForm: React.FC<CollectionFormProps> = ({ onSave, initialProfile 
       painted: 0
     }
   );
+  const [validationError, setValidationError] = useState<string | null>(null);
   
   const handleTierChange = (tier: CollectorTier, value: number) => {
     // Ensure value doesn't exceed max for tier
@@ -123,6 +124,9 @@ const CollectionForm: React.FC<CollectionFormProps> = ({ onSave, initialProfile 
       ...prev,
       [tier]: validValue
     }));
+    
+    // Clear validation error when user enters data
+    setValidationError(null);
   };
   
   const totalPoints = calculateTotalPoints(collectionPoints);
@@ -140,6 +144,12 @@ const CollectionForm: React.FC<CollectionFormProps> = ({ onSave, initialProfile 
   
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate that at least one skin tier has a value
+    if (totalSkinsOwned === 0) {
+      setValidationError("Please enter at least one skin in any tier before saving");
+      return;
+    }
     
     const updatedProfile: UserProfile = {
       ...initialProfile,
@@ -190,6 +200,12 @@ const CollectionForm: React.FC<CollectionFormProps> = ({ onSave, initialProfile 
       <form onSubmit={handleSubmit}>
         <div className="bg-indigo-900 bg-opacity-30 p-4 rounded-lg mb-4">
           <h3 className="text-lg font-semibold text-white mb-4">Input Your Collection:</h3>
+          
+          {validationError && (
+            <div className="bg-red-900 bg-opacity-50 text-white p-3 rounded-lg mb-4">
+              <p className="text-sm">{validationError}</p>
+            </div>
+          )}
           
           {tiers.map(tier => (
             <TierItem
