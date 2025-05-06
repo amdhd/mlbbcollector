@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-export type NotificationType = 'success' | 'error' | 'info' | 'warning';
+export type NotificationType = 'success' | 'error' | 'info';
 
 interface NotificationProps {
   message: string;
@@ -31,7 +31,6 @@ const Notification: React.FC<NotificationProps> = ({
       case 'success': return 'bg-green-500';
       case 'error': return 'bg-red-500';
       case 'info': return 'bg-blue-500';
-      case 'warning': return 'bg-amber-500';
       default: return 'bg-gray-500';
     }
   };

@@ -1,0 +1,13 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "mlbbUsers",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "region", "order": "ASCENDING" },
+        { "fieldPath": "totalPoints", "order": "DESCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+} 

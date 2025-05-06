@@ -13,10 +13,10 @@ import Notification, { NotificationType } from '../components/Notification';
 import { 
   saveUserProfile, 
   getUserByPlayerId, 
+  getTopUsers,
+  getAllUsers 
 } from '../lib/firebase/mlbbService';
 import { calculatePercentile, getUserRank } from '../lib/mlbbUtils';
-import { initNetworkListeners, isOffline } from '../lib/firebase/firebaseUtils';
-import { useDataPrefetch } from '../lib/hooks/useDataPrefetch';
 
 const defaultProfile: UserProfile = {
   name: '',
@@ -55,22 +55,9 @@ const getClientIP = async (): Promise<string> => {
 export default function Home() {
   const [activeTab, setActiveTab] = useState<TabId>('profile');
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
+  const [topUsers, setTopUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [profileCreated, setProfileCreated] = useState<boolean>(false);
-  const [isOnline, setIsOnline] = useState<boolean>(true);
-  
-  // Use the data prefetch hook to handle all data fetching logic
-  const { 
-    topUsers, 
-    allUsers, 
-    topUsersFetchStatus, 
-    allUsersFetchStatus, 
-    fetchTopUsers, 
-    fetchAllUsers 
-  } = useDataPrefetch({ 
-    prefetchAllUsers: true, 
-    prefetchCount: 30
-  });
   
   const [notification, setNotification] = useState<{
     message: string;
@@ -87,30 +74,6 @@ export default function Home() {
     setNotification(null);
   };
   
-  // Setup network detection
-  useEffect(() => {
-    const cleanup = initNetworkListeners((online) => {
-      setIsOnline(online);
-      
-      if (!online) {
-        showNotification('You are offline. Using cached data.', 'warning');
-      } else {
-        // When back online, refresh data
-        fetchTopUsers(30, true);
-        fetchAllUsers(true);
-        if (currentUser?.playerId) {
-          fetchUserData(currentUser.playerId);
-        }
-        showNotification('You are back online!', 'success');
-      }
-    });
-    
-    // Initial status
-    setIsOnline(navigator.onLine);
-    
-    return cleanup;
-  }, [currentUser, fetchTopUsers, fetchAllUsers]);
-  
   // Tab change handler
   const handleTabChange = (tab: TabId) => {
     // Always allow switching tabs
@@ -120,23 +83,20 @@ export default function Home() {
     if (tab === 'collection' && !currentUser && !profileCreated) {
       showNotification('Please save your profile first', 'info');
     }
-    
-    // If switching to rankings tab, make sure we have the latest data
-    if (tab === 'rankings') {
-      fetchTopUsers(30, false);
-    }
   };
   
-  // Fetch user data from Firebase
+  // Fetch user data from Firebase - wrapped in useCallback to use in the dependency array
   const fetchUserData = useCallback(async (playerId: string) => {
     try {
       const userData = await getUserByPlayerId(playerId);
       if (userData) {
-        // Use prefetched data for calculations
+        // Fetch all users to calculate percentile and rank
+        const allUsers = await getAllUsers();
+        
         const userWithStats = {
           ...userData,
-          percentile: calculatePercentile(userData.totalPoints, allUsers.length > 0 ? allUsers : topUsers),
-          rank: getUserRank(userData.totalPoints, allUsers.length > 0 ? allUsers : topUsers)
+          percentile: calculatePercentile(userData.totalPoints, allUsers),
+          rank: getUserRank(userData.totalPoints, allUsers)
         };
         
         setCurrentUser(userWithStats);
@@ -148,18 +108,21 @@ export default function Home() {
       console.error('Error fetching user data:', error);
       showNotification('Failed to load user data', 'error');
     }
-  }, [topUsers, allUsers]);
+  }, []);
   
-  // Handle data loading state
-  useEffect(() => {
-    // Set loading based on the fetch status
-    setLoading(topUsersFetchStatus === 'loading');
-    
-    // If we have rankings data and we're on the rankings tab, we're done loading
-    if (topUsers.length > 0 && activeTab === 'rankings') {
+  // Fetch top users from Firebase - wrapped in useCallback to use in the dependency array
+  const fetchTopUsers = useCallback(async () => {
+    setLoading(true);
+    try {
+      const users = await getTopUsers(30);
+      setTopUsers(users);
+    } catch (error) {
+      console.error('Error fetching top users:', error);
+      showNotification('Failed to load rankings', 'error');
+    } finally {
       setLoading(false);
     }
-  }, [topUsersFetchStatus, topUsers, activeTab]);
+  }, []);
   
   // Load data from localStorage on initial render
   useEffect(() => {
@@ -186,7 +149,9 @@ export default function Home() {
         console.error('Failed to parse stored user data', error);
       }
     }
-  }, [fetchUserData]);
+    
+    fetchTopUsers();
+  }, [fetchUserData, fetchTopUsers]);
   
   // Handle saving the user profile
   const handleSaveProfile = async (profile: UserProfile) => {
@@ -196,16 +161,13 @@ export default function Home() {
       
       const userId = await saveUserProfile(profile, clientIP);
       
-      // Ensure we have the latest data for calculations
-      if (allUsers.length === 0) {
-        await fetchAllUsers(true);
-      }
+      const allUsers = await getAllUsers();
       
       const updatedProfile = {
         ...profile,
         id: userId,
-        percentile: calculatePercentile(profile.totalPoints, allUsers.length > 0 ? allUsers : topUsers),
-        rank: getUserRank(profile.totalPoints, allUsers.length > 0 ? allUsers : topUsers)
+        percentile: calculatePercentile(profile.totalPoints, allUsers),
+        rank: getUserRank(profile.totalPoints, allUsers)
       };
       
       setCurrentUser(updatedProfile);
@@ -217,7 +179,7 @@ export default function Home() {
       setActiveTab('collection');
       
       // Update top users list
-      fetchTopUsers(30, true);
+      fetchTopUsers();
     } catch (error: any) {
       console.error('Error saving profile:', error);
       
@@ -235,15 +197,12 @@ export default function Home() {
     try {
       await saveUserProfile(profile);
       
-      // Ensure we have the latest data for calculations
-      if (allUsers.length === 0) {
-        await fetchAllUsers(true);
-      }
+      const allUsers = await getAllUsers();
       
       const updatedProfile = {
         ...profile,
-        percentile: calculatePercentile(profile.totalPoints, allUsers.length > 0 ? allUsers : topUsers),
-        rank: getUserRank(profile.totalPoints, allUsers.length > 0 ? allUsers : topUsers)
+        percentile: calculatePercentile(profile.totalPoints, allUsers),
+        rank: getUserRank(profile.totalPoints, allUsers)
       };
       
       setCurrentUser(updatedProfile);
@@ -254,7 +213,7 @@ export default function Home() {
       setActiveTab('rankings');
       
       // Update top users list
-      fetchTopUsers(30, true);
+      fetchTopUsers();
     } catch (error) {
       console.error('Error saving collection:', error);
       showNotification('Failed to save collection', 'error');
@@ -289,16 +248,20 @@ export default function Home() {
           {activeTab === 'collection' && !profileCreated && !currentUser && (
             <div className="bg-gray-800 rounded-lg p-6 my-4">
               <h2 className="text-xl font-bold text-orange-400 mb-4">Collection</h2>
-              <p className="text-white">Please create your profile first before adding collection details.</p>
+              <p className="text-white mb-4">Please save your profile before adding collection details.</p>
+              <button 
+                onClick={() => setActiveTab('profile')}
+                className="bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-4 rounded transition-colors"
+              >
+                Go to Profile
+              </button>
             </div>
           )}
           
           {activeTab === 'rankings' && (
             <>
               {loading ? (
-                <div className="flex justify-center my-10">
-                  <LoadingSpinner />
-                </div>
+                <LoadingSpinner size="large" />
               ) : (
                 <Rankings
                   topUsers={topUsers}
@@ -312,15 +275,15 @@ export default function Home() {
             <Help />
           )}
         </div>
-        
-        {notification && (
-          <Notification
-            message={notification.message}
-            type={notification.type}
-            onClose={clearNotification}
-          />
-        )}
       </div>
+      
+      {notification && (
+        <Notification
+          message={notification.message}
+          type={notification.type}
+          onClose={clearNotification}
+        />
+      )}
     </main>
   );
 }

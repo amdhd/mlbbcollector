@@ -85,3 +85,44 @@ npm run start
 ## License
 
 MIT
+
+# MLBB Collector - Delete Empty Collections Script
+
+This script will delete users from the MLBB Collector database who have registered but haven't added any skin collections (where all skin tier counts are 0).
+
+## Prerequisites
+
+- Node.js installed
+- Firebase Admin SDK package installed
+
+## Installation
+
+1. Install the required package:
+
+```bash
+npm install firebase-admin
+```
+
+2. The script already contains the embedded Firebase Admin credentials.
+
+## Usage
+
+Simply run the script with Node.js:
+
+```bash
+node delete-empty-collections.js
+```
+
+## What the script does
+
+1. Connects to the Firebase Firestore database using the embedded admin credentials
+2. Fetches all users from the 'mlbbUsers' collection
+3. For each user, checks if all skin tier counts are 0
+4. Deletes users with no skin collections
+5. Outputs a summary of how many users were found and deleted
+
+## Security Note
+
+- The credentials in this script provide administrative access to your Firebase project
+- After using this script, consider rotating your Firebase Admin SDK credentials
+- Do not share this script publicly as it contains sensitive credentials

@@ -1,75 +1,24 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Function to check if a user is authenticated
-    function isAuthenticated() {
-      return request.auth != null;
+    // Allow public read AND write access to mlbbUsers collection
+    match /mlbbUsers/{userId} {
+      allow read, write: if true;
     }
     
-    // Function to check if user is accessing their own data
-    function isOwner(userId) {
-      return request.auth.uid == userId;
+    // Rate limits collection - allow read/write for IP rate limiting
+    match /ipRateLimits/{ipHash} {
+      allow read, write: if true;
     }
     
-    // Rate limiting functions
-    function isNotRateLimited(collection) {
-      // Get rate limit document for this user and collection
-      let rateLimitDoc = get(/databases/$(database)/documents/rateLimits/$(request.auth.uid)).data;
-      let now = request.time;
-      
-      // If rate limit doc doesn't exist, allow the request
-      if (rateLimitDoc == null) return true;
-      
-      // Check if the user has a timestamp for this collection
-      let lastRequest = rateLimitDoc[collection];
-      if (lastRequest == null) return true;
-      
-      // Rate limits based on collection type
-      let cooldownPeriod = duration.value(5, 's'); // Default: 5 seconds
-      
-      if (collection == 'profiles') {
-        cooldownPeriod = duration.value(10, 's'); // Allow profile update every 10 seconds
-      } else if (collection == 'collections') {
-        cooldownPeriod = duration.value(3, 's'); // Allow collection update every 3 seconds
-      }
-      
-      // Allow if enough time has passed since the last request
-      return now >= lastRequest + cooldownPeriod;
-    }
-    
-    // Helper function to require authentication and rate limit check
-    function canWrite(collection) {
-      return isAuthenticated() && isNotRateLimited(collection);
-    }
-    
-    // Rate limits collection - stores timestamps of user actions
+    // Allow read/write to rateLimits collection
     match /rateLimits/{userId} {
-      allow read: if isOwner(userId);
-      allow write: if false; // Only updated through rules
+      allow read, write: if true;
     }
     
-    // User profiles collection
-    match /users/{userId} {
-      allow read: if isAuthenticated();
-      allow create: if isOwner(userId) && canWrite('profiles');
-      allow update: if isOwner(userId) && canWrite('profiles');
-      allow delete: if isOwner(userId);
-    }
-    
-    // Collection data
-    match /collections/{collectionId} {
-      allow read: if isAuthenticated();
-      allow create: if request.auth.uid == request.resource.data.userId && canWrite('collections');
-      allow update: if request.auth.uid == resource.data.userId && canWrite('collections');
-      allow delete: if request.auth.uid == resource.data.userId;
-    }
-    
-    // Rankings can be read by anyone, but only updated by owners
-    match /rankings/{rankingId} {
-      allow read: if true;
-      allow write: if isAuthenticated() && 
-                    request.auth.uid == resource.data.userId && 
-                    canWrite('rankings');
+    // All other collections require authentication
+    match /{document=**} {
+      allow read, write: if request.auth != null;
     }
   }
 } 

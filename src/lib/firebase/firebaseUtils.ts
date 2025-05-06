@@ -173,37 +173,3 @@ async function hashIP(ip: string): Promise<string> {
   const hashArray = Array.from(new Uint8Array(hashBuffer));
   return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 }
-
-// Network status monitoring
-export const isOffline = (): boolean => {
-  return typeof navigator !== 'undefined' && !navigator.onLine;
-};
-
-// Extend the cache TTL in offline mode
-export const getAdjustedCacheTTL = (baseTTL: number): number => {
-  // When offline, extend cache TTL by 5x
-  return isOffline() ? baseTTL * 5 : baseTTL;
-};
-
-// Add network status event listeners
-export const initNetworkListeners = (onStatusChange?: (isOnline: boolean) => void) => {
-  if (typeof window === 'undefined') return;
-
-  const handleOnline = () => {
-    console.log('Application is online');
-    onStatusChange?.(true);
-  };
-
-  const handleOffline = () => {
-    console.log('Application is offline - using cached data');
-    onStatusChange?.(false);
-  };
-
-  window.addEventListener('online', handleOnline);
-  window.addEventListener('offline', handleOffline);
-
-  return () => {
-    window.removeEventListener('online', handleOnline);
-    window.removeEventListener('offline', handleOffline);
-  };
-};
