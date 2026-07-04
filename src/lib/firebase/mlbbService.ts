@@ -1,6 +1,5 @@
 import { db } from './firebase';
 import { UserProfile } from '../../types/mlbb';
-import { updateRateLimitTimestamp, checkIPProfileRateLimit } from './firebaseUtils';
 import {
   collection,
   addDoc,
@@ -91,25 +90,11 @@ const convertToUserProfile = (
 };
 
 // Add or update user profile with IP rate limiting
-export const saveUserProfile = async (profileInput: UserProfile, clientIP?: string): Promise<string> => {
+export const saveUserProfile = async (profileInput: UserProfile): Promise<string> => {
   try {
     // Trim/length-cap strings and clamp numeric fields before any read/write.
     const profile = sanitizeProfile(profileInput);
 
-    // Check IP rate limits if the clientIP is provided and this appears to be a new profile
-    if (clientIP && !profile.id) {
-      const ipCheck = await checkIPProfileRateLimit(clientIP);
-      if (!ipCheck.allowed) {
-        throw new Error(`Profile submission limit reached. Please try again in ${ipCheck.timeRemaining} hours.`);
-      }
-    }
-    
-    // First update the rate limit timestamp
-    const rateLimitUpdated = await updateRateLimitTimestamp('profiles');
-    if (!rateLimitUpdated) {
-      console.warn('Rate limit tracking failed, but continuing with save operation');
-    }
-    
     // Ensure collection exists
     await ensureCollection();
     

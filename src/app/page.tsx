@@ -39,19 +39,6 @@ const defaultProfile: UserProfile = {
   updatedAt: Date.now()
 };
 
-// Get client IP address - this is a simple approach that works in many cases
-// For a more accurate approach, you'd use a server-side API
-const getClientIP = async (): Promise<string> => {
-  try {
-    const response = await fetch('https://api.ipify.org?format=json');
-    const data = await response.json();
-    return data.ip;
-  } catch (error) {
-    console.error('Failed to get client IP:', error);
-    return 'unknown';
-  }
-};
-
 export default function Home() {
   const [activeTab, setActiveTab] = useState<TabId>('profile');
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
@@ -156,10 +143,7 @@ export default function Home() {
   // Handle saving the user profile
   const handleSaveProfile = async (profile: UserProfile) => {
     try {
-      // Get client IP for rate limiting
-      const clientIP = await getClientIP();
-      
-      const userId = await saveUserProfile(profile, clientIP);
+      const userId = await saveUserProfile(profile);
       
       const allUsers = await getAllUsers();
       
