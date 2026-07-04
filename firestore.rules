@@ -1,24 +1,19 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Allow public read AND write access to mlbbUsers collection
+    // Project is paused: the leaderboard data is frozen read-only.
+    // Public reads keep the deployed rankings working; all writes are denied
+    // to prevent tampering with the existing records. Re-enable writes here
+    // (e.g. scoped to request.auth) if the project is ever resumed.
     match /mlbbUsers/{userId} {
-      allow read, write: if true;
+      allow read: if true;
+      allow write: if false;
     }
-    
-    // Rate limits collection - allow read/write for IP rate limiting
-    match /ipRateLimits/{ipHash} {
-      allow read, write: if true;
-    }
-    
-    // Allow read/write to rateLimits collection
-    match /rateLimits/{userId} {
-      allow read, write: if true;
-    }
-    
-    // All other collections require authentication
+
+    // Deny everything else. The client-side rate-limit collections
+    // (rateLimits / ipRateLimits) are no longer used now that writes are off.
     match /{document=**} {
-      allow read, write: if request.auth != null;
+      allow read, write: if false;
     }
   }
-} 
+}

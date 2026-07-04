@@ -15,10 +15,35 @@ import {
   serverTimestamp,
   Timestamp,
   DocumentData,
+  DocumentSnapshot,
   QueryDocumentSnapshot
 } from 'firebase/firestore';
 
 const COLLECTION_NAME = 'mlbbUsers';
+
+// Trim and length-cap a user-supplied string before it is persisted.
+const cleanStr = (value: unknown, maxLength: number): string =>
+  (value == null ? '' : String(value)).trim().slice(0, maxLength);
+
+// Coerce a user-supplied numeric field to a non-negative finite number.
+const clampNum = (value: unknown): number => {
+  const n = Number(value);
+  return Number.isFinite(n) && n > 0 ? n : 0;
+};
+
+// Normalize/limit user-supplied profile fields before writing to Firestore.
+const sanitizeProfile = (profile: UserProfile): UserProfile => ({
+  ...profile,
+  name: cleanStr(profile.name, 60),
+  region: cleanStr(profile.region, 40),
+  playerId: cleanStr(profile.playerId, 40),
+  seasonJoined: cleanStr(profile.seasonJoined, 20),
+  profileImageUrl: cleanStr(profile.profileImageUrl, 1000),
+  totalPoints: clampNum(profile.totalPoints),
+  accountWorth: clampNum(profile.accountWorth),
+  diamondValue: clampNum(profile.diamondValue),
+  rmValue: clampNum(profile.rmValue),
+});
 
 // Helper to ensure the collection exists
 const ensureCollection = async () => {
@@ -34,8 +59,10 @@ const ensureCollection = async () => {
 };
 
 // Convert Firestore data to UserProfile
-const convertToUserProfile = (doc: QueryDocumentSnapshot<DocumentData>): UserProfile => {
-  const data = doc.data();
+const convertToUserProfile = (
+  doc: QueryDocumentSnapshot<DocumentData> | DocumentSnapshot<DocumentData>
+): UserProfile => {
+  const data = doc.data() || {};
   return {
     id: doc.id,
     name: data.name || '',
@@ -64,8 +91,11 @@ const convertToUserProfile = (doc: QueryDocumentSnapshot<DocumentData>): UserPro
 };
 
 // Add or update user profile with IP rate limiting
-export const saveUserProfile = async (profile: UserProfile, clientIP?: string): Promise<string> => {
+export const saveUserProfile = async (profileInput: UserProfile, clientIP?: string): Promise<string> => {
   try {
+    // Trim/length-cap strings and clamp numeric fields before any read/write.
+    const profile = sanitizeProfile(profileInput);
+
     // Check IP rate limits if the clientIP is provided and this appears to be a new profile
     if (clientIP && !profile.id) {
       const ipCheck = await checkIPProfileRateLimit(clientIP);
@@ -167,10 +197,7 @@ export const getUserById = async (id: string): Promise<UserProfile | null> => {
     }
     
     console.log('User found with id:', id);
-    return {
-      id: docSnap.id,
-      ...docSnap.data()
-    } as UserProfile;
+    return convertToUserProfile(docSnap);
   } catch (error) {
     console.error('Error getting user by id:', error);
     return null;

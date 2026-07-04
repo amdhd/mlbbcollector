@@ -1,16 +1,16 @@
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
-    // Allow anyone to read files
-    match /{allPaths=**} {
-      allow read: if true;
-    }
-    
-    // Allow anyone to upload to profile-images folder
+    // Frozen: existing profile images stay publicly readable so the deployed
+    // leaderboard renders; no new uploads are permitted while paused.
     match /profile-images/{fileName} {
-      allow write: if true; // This allows unauthenticated uploads as well
+      allow read: if true;
+      allow write: if false;
     }
-    
-    // If you need to add other paths later, add them here
+
+    // Everything else: no access (previously all paths were world-readable).
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
   }
-} 
+}

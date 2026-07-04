@@ -37,7 +37,6 @@
     "out/types/**/*.ts"
   ],
   "exclude": [
-    "node_modules",
-    "src/app-api-backup"
+    "node_modules"
   ]
 }
