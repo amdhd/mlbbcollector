@@ -1,5 +1,4 @@
 import React from 'react';
-import Image from 'next/image';
 
 const Help: React.FC = () => {
   const steps = [
