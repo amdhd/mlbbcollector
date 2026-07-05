@@ -111,28 +111,21 @@ export const formatNumber = (num: number): string => {
   return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 };
 
-// Function to calculate user's percentile based on their rank and total number of users
-export const calculatePercentile = (userPoints: number, allUsers: UserProfile[]): number => {
-  if (!allUsers.length) return 0;
-  
-  // Sort users by points in descending order
-  const sortedUsers = [...allUsers].sort((a, b) => b.totalPoints - a.totalPoints);
-  
-  // Find user's rank (position in the sorted array + 1)
-  const userRank = sortedUsers.findIndex(user => user.totalPoints <= userPoints) + 1;
-  
-  // Calculate top X% - lower percentages are better (top 10% is better than top 50%)
-  // For example: Rank 3 out of 10 users means user is in top 30%
-  return Math.round((userRank * 100) / allUsers.length);
-};
-
-// Get the user's rank
+// Get the user's rank: one more than the number of users who scored higher.
+// This is always >= 1 for a non-empty list, even when the user's points are
+// below every stored user or the user isn't in the list yet.
 export const getUserRank = (userPoints: number, allUsers: UserProfile[]): number => {
   if (!allUsers.length) return 0;
-  
-  // Sort users by points in descending order and find the user's position
-  // This gives us the rank (1st, 2nd, 3rd, etc.)
-  return [...allUsers]
-    .sort((a, b) => b.totalPoints - a.totalPoints)
-    .findIndex(user => user.totalPoints <= userPoints) + 1;
+
+  const usersAbove = allUsers.filter(user => user.totalPoints > userPoints).length;
+  return usersAbove + 1;
+};
+
+// Calculate the user's percentile (top X% - lower is better).
+// For example: rank 3 out of 10 users means the user is in the top 30%.
+export const calculatePercentile = (userPoints: number, allUsers: UserProfile[]): number => {
+  if (!allUsers.length) return 0;
+
+  const userRank = getUserRank(userPoints, allUsers);
+  return Math.round((userRank * 100) / allUsers.length);
 }; 
