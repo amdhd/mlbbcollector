@@ -12,19 +12,28 @@ import {
   getDoc,
   updateDoc,
   serverTimestamp,
-  Timestamp,
   DocumentData,
   DocumentSnapshot,
   QueryDocumentSnapshot
 } from 'firebase/firestore';
 
+// This module is the "data access layer": every read/write to the leaderboard
+// goes through these functions, so the UI never talks to Firestore directly.
+//
+// NOTE: The live deployment freezes the leaderboard as read-only (see
+// firestore.rules — `allow write: if false`). The write functions below still
+// work against your own Firebase project when you enable writes locally.
+
+// Name of the Firestore collection that stores every player's profile.
 const COLLECTION_NAME = 'mlbbUsers';
 
-// Trim and length-cap a user-supplied string before it is persisted.
+// Trim and length-cap a user-supplied string before it is persisted. This stops
+// oversized or padded input from ever reaching the database.
 const cleanStr = (value: unknown, maxLength: number): string =>
   (value == null ? '' : String(value)).trim().slice(0, maxLength);
 
-// Coerce a user-supplied numeric field to a non-negative finite number.
+// Coerce a user-supplied numeric field to a non-negative finite number, so a
+// malformed value (NaN, negative, Infinity) can never be stored.
 const clampNum = (value: unknown): number => {
   const n = Number(value);
   return Number.isFinite(n) && n > 0 ? n : 0;
@@ -44,20 +53,9 @@ const sanitizeProfile = (profile: UserProfile): UserProfile => ({
   rmValue: clampNum(profile.rmValue),
 });
 
-// Helper to ensure the collection exists
-const ensureCollection = async () => {
-  try {
-    // Try to get documents from the collection - this will create it if it doesn't exist
-    const querySnapshot = await getDocs(collection(db, COLLECTION_NAME));
-    console.log(`Collection ${COLLECTION_NAME} exists or was created`);
-    return true;
-  } catch (error) {
-    console.error(`Error accessing collection ${COLLECTION_NAME}:`, error);
-    return false;
-  }
-};
-
-// Convert Firestore data to UserProfile
+// Convert a raw Firestore document into a fully-formed UserProfile. Firestore
+// returns loosely-typed data, so we default every field here to guarantee the
+// rest of the app always receives a complete, predictable object.
 const convertToUserProfile = (
   doc: QueryDocumentSnapshot<DocumentData> | DocumentSnapshot<DocumentData>
 ): UserProfile => {
@@ -84,26 +82,26 @@ const convertToUserProfile = (
     rmValue: data.rmValue || 0,
     percentile: data.percentile || 0,
     rank: data.rank || 0,
+    // Firestore timestamps need `.toMillis()` to become plain numbers; fall
+    // back to "now" for older documents that predate these fields.
     createdAt: data.createdAt?.toMillis() || Date.now(),
     updatedAt: data.updatedAt?.toMillis() || Date.now()
   };
 };
 
-// Add or update user profile with IP rate limiting
+// Create a new profile, or update the existing one if this playerId is already
+// registered. Returns the Firestore document id of the saved profile.
 export const saveUserProfile = async (profileInput: UserProfile): Promise<string> => {
   try {
-    // Trim/length-cap strings and clamp numeric fields before any read/write.
+    // Always clean/clamp the input first, so nothing unvalidated is written.
     const profile = sanitizeProfile(profileInput);
 
-    // Ensure collection exists
-    await ensureCollection();
-    
-    // Check if user already exists
+    // "Upsert": if a profile with this playerId exists, update it in place
+    // instead of creating a duplicate.
     if (profile.playerId) {
       const existingUser = await getUserByPlayerId(profile.playerId);
-      
+
       if (existingUser) {
-        // Update existing user
         await updateDoc(doc(db, COLLECTION_NAME, existingUser.id!), {
           name: profile.name,
           region: profile.region,
@@ -115,49 +113,43 @@ export const saveUserProfile = async (profileInput: UserProfile): Promise<string
           accountWorth: profile.accountWorth,
           diamondValue: profile.diamondValue,
           rmValue: profile.rmValue,
+          // Let the server set the time so it isn't affected by a wrong clock
+          // on the user's device.
           updatedAt: serverTimestamp()
         });
-        console.log('User profile updated successfully');
         return existingUser.id!;
       }
     }
-    
-    // Add new user
+
+    // No existing profile — create a brand new document.
     const docRef = await addDoc(collection(db, COLLECTION_NAME), {
       ...profile,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp()
     });
-    
-    console.log('User profile created successfully with ID:', docRef.id);
+
     return docRef.id;
   } catch (error) {
     console.error('Error saving user profile:', error);
-    throw error; // Rethrow so we can handle specific errors in the UI
+    // Re-throw so the UI can decide how to tell the user about the failure.
+    throw error;
   }
 };
 
-// Get user by player ID
+// Look up a single profile by the player's in-game id. Returns null if no
+// player has that id (or on error, so the UI can treat it as "not found").
 export const getUserByPlayerId = async (playerId: string): Promise<UserProfile | null> => {
   try {
     if (!playerId) return null;
-    
-    // Ensure collection exists
-    await ensureCollection();
-    
+
     const userQuery = query(
       collection(db, COLLECTION_NAME),
       where('playerId', '==', playerId)
     );
-    
+
     const querySnapshot = await getDocs(userQuery);
-    
-    if (querySnapshot.empty) {
-      console.log('No user found with playerId:', playerId);
-      return null;
-    }
-    
-    console.log('User found with playerId:', playerId);
+    if (querySnapshot.empty) return null;
+
     return convertToUserProfile(querySnapshot.docs[0]);
   } catch (error) {
     console.error('Error getting user by playerId:', error);
@@ -165,97 +157,59 @@ export const getUserByPlayerId = async (playerId: string): Promise<UserProfile |
   }
 };
 
-// Get user by document ID
-export const getUserById = async (id: string): Promise<UserProfile | null> => {
-  try {
-    if (!id) return null;
-    
-    // Ensure collection exists
-    await ensureCollection();
-    
-    const docRef = doc(db, COLLECTION_NAME, id);
-    const docSnap = await getDoc(docRef);
-    
-    if (!docSnap.exists()) {
-      console.log('No user found with id:', id);
-      return null;
-    }
-    
-    console.log('User found with id:', id);
-    return convertToUserProfile(docSnap);
-  } catch (error) {
-    console.error('Error getting user by id:', error);
-    return null;
-  }
-};
-
-// Get top users by total points
+// Fetch the highest-scoring players for the global leaderboard. `count` caps
+// how many rows are returned so we never download the whole collection.
 export const getTopUsers = async (count: number = 30): Promise<UserProfile[]> => {
   try {
-    // Ensure collection exists
-    await ensureCollection();
-    
     const topUsersQuery = query(
       collection(db, COLLECTION_NAME),
       orderBy('totalPoints', 'desc'),
       limit(count)
     );
-    
+
     const querySnapshot = await getDocs(topUsersQuery);
-    
-    const users = querySnapshot.docs.map(convertToUserProfile);
-    console.log(`Retrieved ${users.length} top users`);
-    return users;
+    return querySnapshot.docs.map(convertToUserProfile);
   } catch (error) {
     console.error('Error getting top users:', error);
     return [];
   }
 };
 
-// Get top users by region
+// Same as getTopUsers, but limited to a single region. Requires the composite
+// (region, totalPoints) index defined in firestore.indexes.json.
 export const getTopUsersByRegion = async (region: string, count: number = 30): Promise<UserProfile[]> => {
   try {
     if (!region) return [];
-    
-    // Ensure collection exists
-    await ensureCollection();
-    
+
     const topUsersQuery = query(
       collection(db, COLLECTION_NAME),
       where('region', '==', region),
       orderBy('totalPoints', 'desc'),
       limit(count)
     );
-    
+
     const querySnapshot = await getDocs(topUsersQuery);
-    
-    const users = querySnapshot.docs.map(convertToUserProfile);
-    console.log(`Retrieved ${users.length} top users from region:`, region);
-    return users;
+    return querySnapshot.docs.map(convertToUserProfile);
   } catch (error) {
     console.error('Error getting top users by region:', error);
     return [];
   }
 };
 
-// Get all users
+// Fetch every player, sorted by score. Used to work out a user's exact rank and
+// percentile against the whole population (see mlbbUtils). This reads the full
+// collection, so it's only suitable while the dataset stays small.
 export const getAllUsers = async (): Promise<UserProfile[]> => {
   try {
-    // Ensure collection exists
-    await ensureCollection();
-    
     const usersQuery = query(
       collection(db, COLLECTION_NAME),
       orderBy('totalPoints', 'desc')
     );
-    
+
     const querySnapshot = await getDocs(usersQuery);
-    
-    const users = querySnapshot.docs.map(convertToUserProfile);
-    console.log(`Retrieved ${users.length} users total`);
-    return users;
+    return querySnapshot.docs.map(convertToUserProfile);
   } catch (error) {
     console.error('Error getting all users:', error);
     return [];
   }
-}; 
+};
