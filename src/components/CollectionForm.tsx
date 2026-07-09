@@ -8,8 +8,9 @@ import {
   calculateAccountWorth, 
   calculateDiamondValue,
   calculateRMValue,
-  formatNumber 
+  formatNumber
 } from '../lib/mlbbUtils';
+import { IS_READ_ONLY } from '../lib/config';
 
 interface CollectionFormProps {
   onSave: (profile: UserProfile) => void;
@@ -144,7 +145,11 @@ const CollectionForm: React.FC<CollectionFormProps> = ({ onSave, initialProfile 
   
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
+    // Saving is disabled on the read-only demo; the button is disabled too, but
+    // guard here as well so submitting via Enter can't slip through.
+    if (IS_READ_ONLY) return;
+
     // Validate that at least one skin tier has a value
     if (totalSkinsOwned === 0) {
       setValidationError("Please enter at least one skin in any tier before saving");
@@ -241,9 +246,14 @@ const CollectionForm: React.FC<CollectionFormProps> = ({ onSave, initialProfile 
         
         <button
           type="submit"
-          className="w-full bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-bold py-2 px-4 rounded transition-colors"
+          disabled={IS_READ_ONLY}
+          className={`w-full text-white font-bold py-2 px-4 rounded transition-colors ${
+            IS_READ_ONLY
+              ? 'bg-gray-600 cursor-not-allowed opacity-70'
+              : 'bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600'
+          }`}
         >
-          Save Collection
+          {IS_READ_ONLY ? 'Saving disabled (read-only demo)' : 'Save Collection'}
         </button>
         
         <p className="text-center text-gray-400 text-xs mt-4 italic">
