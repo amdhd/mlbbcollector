@@ -6,6 +6,23 @@ on:
     branches: [main]
 
 jobs:
+  # Fast unit tests for the pure business logic (no build or secrets needed).
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run unit tests
+        run: npm test
+
   build:
     runs-on: ubuntu-latest
     steps:
