@@ -10,6 +10,8 @@ import Rankings from '../components/Rankings';
 import Help from '../components/Help';
 import LoadingSpinner from '../components/LoadingSpinner';
 import Notification, { NotificationType } from '../components/Notification';
+import ReadOnlyBanner from '../components/ReadOnlyBanner';
+import { IS_READ_ONLY } from '../lib/config';
 import { 
   saveUserProfile, 
   getUserByPlayerId, 
@@ -151,6 +153,13 @@ export default function Home() {
   
   // Handle saving the user profile
   const handleSaveProfile = async (profile: UserProfile) => {
+    // On the frozen public leaderboard there's nothing to save to. Guard here
+    // as well as disabling the button, so a save can never be triggered.
+    if (IS_READ_ONLY) {
+      showNotification('This is a read-only demo — saving is disabled.', 'info');
+      return;
+    }
+
     try {
       const userId = await saveUserProfile(profile);
       
@@ -181,6 +190,11 @@ export default function Home() {
   
   // Handle saving collection
   const handleSaveCollection = async (profile: UserProfile) => {
+    if (IS_READ_ONLY) {
+      showNotification('This is a read-only demo — saving is disabled.', 'info');
+      return;
+    }
+
     try {
       await saveUserProfile(profile);
       
@@ -218,21 +232,29 @@ export default function Home() {
         />
         
         <div className="mt-2 sm:mt-4">
+          {/* On the read-only demo, be upfront on the input tabs that nothing
+              can be saved. */}
+          {IS_READ_ONLY && (activeTab === 'profile' || activeTab === 'collection') && (
+            <ReadOnlyBanner />
+          )}
+
           {activeTab === 'profile' && (
             <ProfileForm
               onSave={handleSaveProfile}
               initialProfile={currentUser || undefined}
             />
           )}
-          
-          {activeTab === 'collection' && (profileCreated || currentUser) && (
+
+          {/* In read-only mode the collection tab is a pure calculator, so we
+              let it open without first saving a profile. */}
+          {activeTab === 'collection' && (IS_READ_ONLY || profileCreated || currentUser) && (
             <CollectionForm
               onSave={handleSaveCollection}
               initialProfile={currentUser || {...defaultProfile}}
             />
           )}
-          
-          {activeTab === 'collection' && !profileCreated && !currentUser && (
+
+          {activeTab === 'collection' && !IS_READ_ONLY && !profileCreated && !currentUser && (
             <div className="bg-gray-800 rounded-lg p-6 my-4">
               <h2 className="text-xl font-bold text-orange-400 mb-4">Collection</h2>
               <p className="text-white mb-4">Please save your profile before adding collection details.</p>

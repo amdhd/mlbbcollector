@@ -45,6 +45,12 @@ existing rankings can't be tampered with. Reads stay open so the leaderboard
 keeps working. Clone the repo and point it at your own Firebase project (with
 writes enabled) to use the profile/collection editing flow.
 
+The UI reflects this honestly: while read-only, the Save buttons are disabled
+and a banner explains that submissions are closed, but the value calculators
+still work (they run entirely in the browser). This is controlled by the
+`NEXT_PUBLIC_READ_ONLY` flag (see `.env.local.example`) — set it to `"false"`,
+and enable writes in `firestore.rules`, to turn saving back on.
+
 ## Technologies Used
 
 - Next.js 15 (App Router, static export)
