@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { UserProfile, CollectorItem, CollectorTier } from '../types/mlbb';
 import { 
   ITEM_POINTS, 
