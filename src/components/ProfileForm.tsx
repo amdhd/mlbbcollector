@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { UserProfile, CollectorItem } from '../types/mlbb';
 import { calculateTotalPoints, calculateAccountWorth } from '../lib/mlbbUtils';
+import { IS_READ_ONLY } from '../lib/config';
 import ImageUpload from './ImageUpload';
 
 interface ProfileFormProps {
@@ -39,7 +40,11 @@ const ProfileForm: React.FC<ProfileFormProps> = ({ onSave, initialProfile }) => 
   
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
+    // Saving is disabled on the read-only demo; the button is disabled too, but
+    // guard here as well so submitting via Enter can't slip through.
+    if (IS_READ_ONLY) return;
+
     // Create empty collection points - these will be set in the Collection tab
     const collectionPoints = initialProfile?.collectionPoints || defaultCollectionItems;
     
@@ -147,9 +152,14 @@ const ProfileForm: React.FC<ProfileFormProps> = ({ onSave, initialProfile }) => 
         
         <button
           type="submit"
-          className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-4 rounded transition-colors mb-4"
+          disabled={IS_READ_ONLY}
+          className={`w-full text-white font-bold py-2 px-4 rounded transition-colors mb-4 ${
+            IS_READ_ONLY
+              ? 'bg-gray-600 cursor-not-allowed opacity-70'
+              : 'bg-orange-500 hover:bg-orange-600'
+          }`}
         >
-          Save Profile
+          {IS_READ_ONLY ? 'Saving disabled (read-only demo)' : 'Save Profile'}
         </button>
       </form>
       
