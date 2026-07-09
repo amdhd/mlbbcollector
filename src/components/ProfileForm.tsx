@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { UserProfile, CollectorItem } from '../types/mlbb';
 import { calculateTotalPoints, calculateAccountWorth } from '../lib/mlbbUtils';
 import ImageUpload from './ImageUpload';
