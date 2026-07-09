@@ -57,23 +57,30 @@ export const calculateDiamondValue = (items: CollectorItem): number => {
   }, 0);
 };
 
-// Calculate RM value based on diamond value (approximate conversion)
+// Convert a diamond value into an approximate real-money value in Malaysian
+// Ringgit (RM). This is a rough estimate only: roughly RM50,000 buys about
+// 1,200,000 diamonds, so we scale by that ratio.
 export const calculateRMValue = (diamondValue: number): number => {
-  // New conversion: RM50k for 630,200 collector points (as per data)
-  const conversionRate = 50000 / 1200000;
-  return Math.round(diamondValue * conversionRate);
+  const RM_PER_DIAMOND = 50000 / 1200000;
+  return Math.round(diamondValue * RM_PER_DIAMOND);
 };
 
-// Calculate account worth based on total points
+// Calculate an account's "worth" by boosting its points with a collector-tier
+// multiplier. A bigger collection unlocks a higher tier, which multiplies the
+// score more (e.g. World Collector doubles it).
 export const calculateAccountWorth = (totalPoints: number): number => {
-  // Find the highest tier the user qualifies for
-  const tier = Object.entries(COLLECTION_TIERS).find(([_, { threshold }]) => 
-    totalPoints >= threshold
-  );
-  
-  // Apply the appropriate multiplier, or 1 if no tier matched
-  return tier 
-    ? Math.round(totalPoints * tier[1].multiplier) 
+  // Sort tiers from highest threshold to lowest, then pick the first one the
+  // user has enough points to reach. Sorting here (instead of relying on the
+  // order the tiers happen to be declared in) keeps this correct even if
+  // COLLECTION_TIERS is ever reordered.
+  const qualifyingTier = Object.values(COLLECTION_TIERS)
+    .sort((a, b) => b.threshold - a.threshold)
+    .find(({ threshold }) => totalPoints >= threshold);
+
+  // If the user hasn't reached any tier, their worth is just their raw points
+  // (multiplier of 1).
+  return qualifyingTier
+    ? Math.round(totalPoints * qualifyingTier.multiplier)
     : totalPoints;
 };
 

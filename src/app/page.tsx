@@ -18,6 +18,15 @@ import {
 } from '../lib/firebase/mlbbService';
 import { calculatePercentile, getUserRank } from '../lib/mlbbUtils';
 
+// This is the app's single page and its state "hub". It owns the data shared
+// across tabs (the signed-in user and the leaderboard) and passes it down to
+// the Profile, Collection, Rankings and Help views. The child forms don't fetch
+// or save on their own — they call the handlers below, which keeps all the
+// Firebase logic in one place.
+//
+// The current user is also cached in localStorage so a returning visitor sees
+// their profile instantly, before the network request to refresh it finishes.
+
 const defaultProfile: UserProfile = {
   name: '',
   region: '',
@@ -164,15 +173,9 @@ export default function Home() {
       
       // Update top users list
       fetchTopUsers();
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error saving profile:', error);
-      
-      // Check if this is a rate limit error
-      if (error.message && error.message.includes('Profile submission limit reached')) {
-        showNotification(error.message, 'error');
-      } else {
-        showNotification('Failed to save profile. Please try again later.', 'error');
-      }
+      showNotification('Failed to save profile. Please try again later.', 'error');
     }
   };
   

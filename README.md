@@ -37,13 +37,21 @@ A web application for Mobile Legends: Bang Bang (MLBB) players to track their sk
 | Expert Collector | 22,000 | 1.2 |
 | Seasoned Collector | 10,000 | 1.1 |
 
+## Project Status
+
+The public deployment runs as a **frozen, read-only leaderboard**: Firestore
+writes are disabled in `firestore.rules` (`allow write: if false`) so the
+existing rankings can't be tampered with. Reads stay open so the leaderboard
+keeps working. Clone the repo and point it at your own Firebase project (with
+writes enabled) to use the profile/collection editing flow.
+
 ## Technologies Used
 
-- Next.js 14 (App Router)
-- React
+- Next.js 15 (App Router, static export)
+- React 19
 - TypeScript
 - Tailwind CSS
-- Firebase (Authentication, Firestore)
+- Firebase (Firestore + Storage)
 
 ## Setup
 
@@ -75,54 +83,18 @@ A web application for Mobile Legends: Bang Bang (MLBB) players to track their sk
 
 ## Deployment
 
-The app can be deployed to Vercel or any other hosting service that supports Next.js:
+This project is configured as a **static export** (`output: 'export'` in
+`next.config.js`), so `npm run build` produces a plain static site in the `out/`
+directory. It's deployed to Firebase Hosting:
 
 ```
-npm run build
-npm run start
+npm run build       # generates the static site in out/
+npm run firebase-deploy   # build + firebase deploy
 ```
+
+Because it's a static export, there are no server-side API routes or middleware —
+all logic runs in the browser and talks to Firebase directly.
 
 ## License
 
 MIT
-
-# MLBB Collector - Delete Empty Collections Script
-
-This script will delete users from the MLBB Collector database who have registered but haven't added any skin collections (where all skin tier counts are 0).
-
-## Prerequisites
-
-- Node.js installed
-- Firebase Admin SDK package installed
-
-## Installation
-
-1. Install the required package:
-
-```bash
-npm install firebase-admin
-```
-
-2. The script already contains the embedded Firebase Admin credentials.
-
-## Usage
-
-Simply run the script with Node.js:
-
-```bash
-node delete-empty-collections.js
-```
-
-## What the script does
-
-1. Connects to the Firebase Firestore database using the embedded admin credentials
-2. Fetches all users from the 'mlbbUsers' collection
-3. For each user, checks if all skin tier counts are 0
-4. Deletes users with no skin collections
-5. Outputs a summary of how many users were found and deleted
-
-## Security Note
-
-- The credentials in this script provide administrative access to your Firebase project
-- After using this script, consider rotating your Firebase Admin SDK credentials
-- Do not share this script publicly as it contains sensitive credentials
