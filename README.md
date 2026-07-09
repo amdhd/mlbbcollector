@@ -52,6 +52,7 @@ writes enabled) to use the profile/collection editing flow.
 - TypeScript
 - Tailwind CSS
 - Firebase (Firestore + Storage)
+- Vitest (unit tests)
 
 ## Setup
 
@@ -80,6 +81,17 @@ writes enabled) to use the profile/collection editing flow.
 2. Enable Firestore Database
 3. Set up security rules for Firestore
 4. Create a web app and copy the configuration details to your `.env.local` file
+
+## Testing
+
+The scoring/ranking logic in `src/lib/mlbbUtils.ts` is covered by unit tests
+(Vitest). These pure functions are the app's core business rules, so they're
+tested in isolation without a browser or Firebase.
+
+```
+npm test          # run once
+npm run test:watch  # re-run on change
+```
 
 ## Deployment
 
