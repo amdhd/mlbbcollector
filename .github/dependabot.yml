@@ -5,6 +5,12 @@ updates:
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 10
+    # Ignore TypeScript major-version bumps. Next.js pins a supported TS range,
+    # so a major like 7.0 (the native compiler port) breaks `next build` until
+    # the toolchain catches up. Re-enable by removing this once Next supports it.
+    ignore:
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
     # Group related bumps into a few PRs instead of one-per-dependency.
     # Majors are intentionally left out of the groups so breaking upgrades
     # (e.g. Next.js 15) arrive as their own reviewable PR.
