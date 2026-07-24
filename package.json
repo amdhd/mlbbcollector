@@ -29,6 +29,7 @@
     "vitest": "^4.1.10"
   },
   "overrides": {
+    "sharp": "^0.35.0",
     "postcss": "$postcss",
     "protobufjs": "^7.6.3",
     "undici": "^6.27.0",
