@@ -131,6 +131,7 @@ export default function Home() {
         
         // Validate that the stored user has the minimum required data to be considered valid
         if (parsedUser && parsedUser.name && parsedUser.playerId) {
+          // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time hydration of client state from localStorage on mount
           setCurrentUser(parsedUser);
           setProfileCreated(true);
           
