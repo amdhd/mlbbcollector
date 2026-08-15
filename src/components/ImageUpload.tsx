@@ -229,7 +229,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
               className="w-24 h-24 rounded-full object-cover border-2 border-orange-500"
             />
             {!isUploading && (
-              <div className="absolute inset-0 bg-black bg-opacity-50 rounded-full flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+              <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
                 <span className="text-white text-xs">Change</span>
               </div>
             )}

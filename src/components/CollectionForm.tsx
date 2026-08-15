@@ -176,38 +176,38 @@ const CollectionForm: React.FC<CollectionFormProps> = ({ onSave, initialProfile 
       <h2 className="text-xl font-bold text-white mb-3">Your Collection Points</h2>
       
       <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-3 mb-4">
-        <div className="bg-red-900 bg-opacity-40 p-3 rounded-lg flex flex-col items-center justify-center">
+        <div className="bg-red-900/40 p-3 rounded-lg flex flex-col items-center justify-center">
           <div className="text-sm sm:text-base text-white mb-1">World Collector V</div>
           <div className="text-xl sm:text-2xl font-bold text-orange-400">{formatNumber(280000)}</div>
         </div>
-        <div className="bg-orange-900 bg-opacity-40 p-3 rounded-lg flex flex-col items-center justify-center">
+        <div className="bg-orange-900/40 p-3 rounded-lg flex flex-col items-center justify-center">
           <div className="text-sm sm:text-base text-white mb-1">Mega Collector V</div>
           <div className="text-xl sm:text-2xl font-bold text-orange-400">{formatNumber(160000)}</div>
         </div>
-        <div className="bg-pink-900 bg-opacity-40 p-3 rounded-lg flex flex-col items-center justify-center">
+        <div className="bg-pink-900/40 p-3 rounded-lg flex flex-col items-center justify-center">
           <div className="text-sm sm:text-base text-white mb-1">Exalted Collector V</div>
           <div className="text-xl sm:text-2xl font-bold text-orange-400">{formatNumber(84000)}</div>
         </div>
-        <div className="bg-purple-900 bg-opacity-40 p-3 rounded-lg flex flex-col items-center justify-center">
+        <div className="bg-purple-900/40 p-3 rounded-lg flex flex-col items-center justify-center">
           <div className="text-sm sm:text-base text-white mb-1">Renowned Collector V</div>
           <div className="text-xl sm:text-2xl font-bold text-orange-400">{formatNumber(44000)}</div>
         </div>
-        <div className="bg-blue-900 bg-opacity-40 p-3 rounded-lg flex flex-col items-center justify-center">
+        <div className="bg-blue-900/40 p-3 rounded-lg flex flex-col items-center justify-center">
           <div className="text-sm sm:text-base text-white mb-1">Expert Collector V</div>
           <div className="text-xl sm:text-2xl font-bold text-orange-400">{formatNumber(22000)}</div>
         </div>
-        <div className="bg-teal-900 bg-opacity-40 p-3 rounded-lg flex flex-col items-center justify-center">
+        <div className="bg-teal-900/40 p-3 rounded-lg flex flex-col items-center justify-center">
           <div className="text-sm sm:text-base text-white mb-1">Seasoned Collector V</div>
           <div className="text-xl sm:text-2xl font-bold text-orange-400">{formatNumber(10000)}</div>
         </div>
       </div>
       
       <form onSubmit={handleSubmit}>
-        <div className="bg-indigo-900 bg-opacity-30 p-4 rounded-lg mb-4">
+        <div className="bg-indigo-900/30 p-4 rounded-lg mb-4">
           <h3 className="text-lg font-semibold text-white mb-4">Input Your Collection:</h3>
           
           {validationError && (
-            <div className="bg-red-900 bg-opacity-50 text-white p-3 rounded-lg mb-4">
+            <div className="bg-red-900/50 text-white p-3 rounded-lg mb-4">
               <p className="text-sm">{validationError}</p>
             </div>
           )}

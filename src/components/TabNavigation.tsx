@@ -20,7 +20,7 @@ const TabNavigation: React.FC<TabNavigationProps> = ({ activeTab, onChange }) =>
       {tabs.map(tab => (
         <button
           key={tab.id}
-          className={`py-2 px-3 font-medium text-xs sm:text-sm focus:outline-none transition-colors ${
+          className={`py-2 px-3 font-medium text-xs sm:text-sm focus:outline-hidden transition-colors ${
             activeTab === tab.id
               ? 'text-orange-400 border-b-2 border-orange-400 bg-gray-800'
               : 'text-gray-300 hover:text-orange-300 hover:bg-gray-800'
