@@ -163,6 +163,7 @@ const CollectionForm: React.FC<CollectionFormProps> = ({ onSave, initialProfile 
       accountWorth,
       diamondValue,
       rmValue,
+      // eslint-disable-next-line react-hooks/purity -- runs in the submit handler, not during render
       updatedAt: Date.now()
     };
     
