@@ -94,7 +94,7 @@ const Help: React.FC = () => {
         ))}
       </div>
       
-      <div className="mt-8 bg-indigo-900 bg-opacity-30 p-4 rounded-lg">
+      <div className="mt-8 bg-indigo-900/30 p-4 rounded-lg">
         <h3 className="text-lg font-semibold text-blue-300 mb-2">Tips</h3>
         <ul className="list-disc pl-6 space-y-2 text-gray-300">
           <li>Update your collection regularly as you acquire new skins</li>

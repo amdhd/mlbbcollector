@@ -42,7 +42,7 @@ const Notification: React.FC<NotificationProps> = ({
       <div className={`${getBackgroundColor()} text-white px-4 py-2 rounded-lg shadow-lg flex items-center`}>
         <span>{message}</span>
         <button 
-          className="ml-3 text-white focus:outline-none" 
+          className="ml-3 text-white focus:outline-hidden" 
           onClick={() => {
             setIsVisible(false);
             if (onClose) onClose();

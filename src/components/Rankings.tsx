@@ -18,7 +18,7 @@ const ProfileImageModal: React.FC<{
   
   return (
     <div 
-      className="fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 bg-black/75 z-50 flex items-center justify-center p-4"
       onClick={onClose}
     >
       <div 
@@ -200,7 +200,7 @@ const Rankings: React.FC<RankingsProps> = ({ topUsers, currentUser }) => {
         
         <div className="mb-4">
           <select
-            className="bg-gray-800 text-white border border-gray-700 rounded-lg px-3 py-2 w-full max-w-xs text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+            className="bg-gray-800 text-white border border-gray-700 rounded-lg px-3 py-2 w-full max-w-xs text-sm focus:outline-hidden focus:ring-2 focus:ring-orange-500"
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
           >
